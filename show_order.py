@@ -1,6 +1,6 @@
 DANCER_FILE = 'S15 Assigned-Unassigned - Sheet1.csv'
 OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up S15 - Sheet1.csv'
-SHOW_ORDER_FILE = 'DS Show Order S15 - Sheet1.csv'
+SHOW_ORDER_FILE = 'Show Order Format - S15.csv'
 
 def conflict(dancers1, dancers2):
     for dancer in dancers1:
@@ -45,30 +45,23 @@ for piece1 in Pieces:
             conflictMap[piece1].append(piece2)
 
 ShowOrder = {}
+ShowOrder["ACT 1"], ShowOrder["ACT 2"] = [], []
 showOrder_file = open(SHOW_ORDER_FILE, 'rU')
 for i, line in enumerate(showOrder_file):
+    
     text = line.strip().split(",")
+    if len(text[0]) > 0: ShowOrder["ACT 1"].append(text[0]) 
+    if len(text[1]) > 0: ShowOrder["ACT 2"].append(text[1])
 
-    pieceName = text[4]
-    if len(pieceName) > 0:
-        if pieceName == "ACT I":
-            act = 1
-            ShowOrder["ACT I"] = []
-        elif pieceName == "ACT II":
-            act = 2
-            ShowOrder["ACT II"] = []
-        elif act == 1:
-            ShowOrder["ACT I"].append(pieceName)
-        elif act == 2:
-            ShowOrder["ACT II"].append(pieceName)
-        else:
-            assert(False)
+    #assert correctness in ACT1 and ACT2
+    #ACT1[i] = text[0]
+    #ACT2[i] = text[1]
 showOrder_file.close()
 
 errors = False
 print "ACT 1:"
-for i in xrange(1, len(ShowOrder["ACT I"])):
-    previousPiece, currentPiece = ShowOrder["ACT I"][i - 1], ShowOrder["ACT I"][i]
+for i in xrange(1, len(ShowOrder["ACT 1"])):
+    previousPiece, currentPiece = ShowOrder["ACT 1"][i - 1], ShowOrder["ACT 1"][i]
     if previousPiece in conflictMap[currentPiece]:
         errors = True
         print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1,
@@ -76,8 +69,8 @@ for i in xrange(1, len(ShowOrder["ACT I"])):
                                                                               previousPiece,
                                                                               currentPiece)
 print "\nACT 2:"
-for i in xrange(1, len(ShowOrder["ACT II"])):
-    previousPiece, currentPiece = ShowOrder["ACT II"][i - 1], ShowOrder["ACT II"][i]
+for i in xrange(1, len(ShowOrder["ACT 2"])):
+    previousPiece, currentPiece = ShowOrder["ACT 2"][i - 1], ShowOrder["ACT 2"][i]
     if previousPiece in conflictMap[currentPiece]:
         errors = True
         print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(ShowOrder["ACT I"]),
