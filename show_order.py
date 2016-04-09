@@ -1,3 +1,5 @@
+import random
+
 DANCER_FILE = 'S16 Assigned-Unassigned - Sheet1.csv'
 OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up S16 - Sheet1.csv'
 SHOW_ORDER_FILE = 'Show Order Format - S16.csv'
@@ -8,84 +10,88 @@ def conflict(dancers1, dancers2):
             return True
     return False
 
-Pieces = {}
-last_choreographer = ""
-dancer_file = open(DANCER_FILE, 'rU')
-for i, line in enumerate(dancer_file):
-    text = line.strip().split(",")
+def import_ShowOrder():
+    Pieces = {}
+    last_choreographer = ""
+    dancer_file = open(DANCER_FILE, 'rU')
+    for i, line in enumerate(dancer_file):
+        text = line.strip().split(",")
 
-    try:
-        parse_attempt = int(text[0])
-        dancer = text[1].strip()
-        Pieces[last_choreographer].append(dancer)
-        #print "Successfully added %s to %s's piece" % (dancer, last_choreographer)
-    except:
-        last_choreographer = text[0].strip()
-        Pieces[last_choreographer] = [] #create piece in map
-        #print "Successfully created %s's piece" % last_choreographer    
-dancer_file.close()
+        try:
+            parse_attempt = int(text[0])
+            dancer = text[1].strip()
+            Pieces[last_choreographer].append(dancer)
+            #print "Successfully added %s to %s's piece" % (dancer, last_choreographer)
+        except:
+            last_choreographer = text[0].strip()
+            Pieces[last_choreographer] = [] #create piece in map
+            #print "Successfully created %s's piece" % last_choreographer    
+    dancer_file.close()
 
-outside_file = open(OUTSIDE_ORGS_FILE, 'rU')
-for i, line in enumerate(outside_file):
-    text = line.strip().split(",")
+    outside_file = open(OUTSIDE_ORGS_FILE, 'rU')
+    for i, line in enumerate(outside_file):
+        text = line.strip().split(",")
+        
+        pieceName = text[-1]
+        performers = text[0:-1]
+        for i_p in xrange(len(performers)): performers[i_p] = performers[i_p].strip()
+        if len(pieceName) != 0: #if valid pieceName
+            Pieces[pieceName] = performers
+    outside_file.close()
 
-    pieceName = text[-1]
-    performers = text[0:-1]
-    for i_p in xrange(len(performers)): performers[i_p] = performers[i_p].strip()
-    if len(pieceName) != 0: #if valid pieceName
-        Pieces[pieceName] = performers
-outside_file.close()
+    del Pieces[""]
 
-del Pieces[""]
+    conflictMap = {}
+    for piece1 in Pieces:
+        conflictMap[piece1] = []
+        for piece2 in Pieces:
+            if (piece1 != piece2) and (conflict(Pieces[piece1], Pieces[piece2])):
+                conflictMap[piece1].append(piece2)
 
-conflictMap = {}
-for piece1 in Pieces:
-    conflictMap[piece1] = []
-    for piece2 in Pieces:
-        if (piece1 != piece2) and (conflict(Pieces[piece1], Pieces[piece2])):
-            conflictMap[piece1].append(piece2)
-
-ShowOrder = {}
-ShowOrder["ACT 1"], ShowOrder["ACT 2"] = [], []
-showOrder_file = open(SHOW_ORDER_FILE, 'rU')
-for i, line in enumerate(showOrder_file):
+    ShowOrder = {}
+    ShowOrder["ACT 1"], ShowOrder["ACT 2"] = [], []
+    showOrder_file = open(SHOW_ORDER_FILE, 'rU')
+    for i, line in enumerate(showOrder_file):
     
-    text = line.strip().split(",")
-    if len(text[0]) > 0: ShowOrder["ACT 1"].append(text[0]) 
-    if len(text[1]) > 0: ShowOrder["ACT 2"].append(text[1])
+        text = line.strip().split(",")
+        if len(text[0]) > 0: ShowOrder["ACT 1"].append(text[0]) 
+        if len(text[1]) > 0: ShowOrder["ACT 2"].append(text[1])
 
-    #assert correctness in ACT1 and ACT2
-    #ACT1[i] = text[0]
-    #ACT2[i] = text[1]
-showOrder_file.close()
+        #assert correctness in ACT1 and ACT2
+        #ACT1[i] = text[0]
+        #ACT2[i] = text[1]
+    showOrder_file.close()
 
-# pop headers
-ShowOrder["ACT 1"].pop(0)
-ShowOrder["ACT 2"].pop(0)
+    # pop headers
+    ShowOrder["ACT 1"].pop(0)
+    ShowOrder["ACT 2"].pop(0)
 
-errors = False
-print "ACT 1:"
-for i in xrange(1, len(ShowOrder["ACT 1"])):
-    previousPiece, currentPiece = ShowOrder["ACT 1"][i - 1], ShowOrder["ACT 1"][i]
-    if previousPiece in conflictMap[currentPiece]:
-        errors = True
-        print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1,
-                                                                              i,
-                                                                              previousPiece,
-                                                                              currentPiece)
-print "\nACT 2:"
-for i in xrange(1, len(ShowOrder["ACT 2"])):
-    previousPiece, currentPiece = ShowOrder["ACT 2"][i - 1], ShowOrder["ACT 2"][i]
-    if previousPiece in conflictMap[currentPiece]:
-        errors = True
-        print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(ShowOrder["ACT 1"]),
-                                                                              i + len(ShowOrder["ACT 1"]),
-                                                                              previousPiece,
-                                                                              currentPiece)
+    return (ShowOrder, conflictMap)
 
-if not errors: print "\nVerdict: This schedule works!"
+def check_order(ShowOrder, conflictMap):
+    errors = False
+    print "ACT 1:"
+    for i in xrange(1, len(ShowOrder["ACT 1"])):
+        previousPiece, currentPiece = ShowOrder["ACT 1"][i - 1], ShowOrder["ACT 1"][i]
+        if previousPiece in conflictMap[currentPiece]:
+            errors = True
+            print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1,
+                                                                                  i,
+                                                                                  previousPiece,
+                                                                                  currentPiece)
+    print "\nACT 2:"
+    for i in xrange(1, len(ShowOrder["ACT 2"])):
+        previousPiece, currentPiece = ShowOrder["ACT 2"][i - 1], ShowOrder["ACT 2"][i]
+        if previousPiece in conflictMap[currentPiece]:
+            errors = True
+            print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(ShowOrder["ACT 1"]),
+                                                                                  i + len(ShowOrder["ACT 1"]),
+                                                                                  previousPiece,
+                                                                                  currentPiece)
+    return errors
+
+(ShowOrder, conflictMap) = import_ShowOrder()
+if (check_order(ShowOrder, conflictMap) == False): print "\nVerdict: This schedule works!"
 else: print "\nVerdict: Review previous errors"
-
-    
 
 
