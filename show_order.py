@@ -1,6 +1,6 @@
-DANCER_FILE = 'S15 Assigned-Unassigned - Sheet1.csv'
-OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up S15 - Sheet1.csv'
-SHOW_ORDER_FILE = 'Show Order Format - S15.csv'
+DANCER_FILE = 'S16 Assigned-Unassigned - Sheet1.csv'
+OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up S16 - Sheet1.csv'
+SHOW_ORDER_FILE = 'Show Order Format - S16.csv'
 
 def conflict(dancers1, dancers2):
     for dancer in dancers1:
@@ -31,6 +31,7 @@ for i, line in enumerate(outside_file):
 
     pieceName = text[-1]
     performers = text[0:-1]
+    for i_p in xrange(len(performers)): performers[i_p] = performers[i_p].strip()
     if len(pieceName) != 0: #if valid pieceName
         Pieces[pieceName] = performers
 outside_file.close()
@@ -58,6 +59,10 @@ for i, line in enumerate(showOrder_file):
     #ACT2[i] = text[1]
 showOrder_file.close()
 
+# pop headers
+ShowOrder["ACT 1"].pop(0)
+ShowOrder["ACT 2"].pop(0)
+
 errors = False
 print "ACT 1:"
 for i in xrange(1, len(ShowOrder["ACT 1"])):
@@ -73,8 +78,8 @@ for i in xrange(1, len(ShowOrder["ACT 2"])):
     previousPiece, currentPiece = ShowOrder["ACT 2"][i - 1], ShowOrder["ACT 2"][i]
     if previousPiece in conflictMap[currentPiece]:
         errors = True
-        print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(ShowOrder["ACT I"]),
-                                                                              i + len(ShowOrder["ACT I"]),
+        print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(ShowOrder["ACT 1"]),
+                                                                              i + len(ShowOrder["ACT 1"]),
                                                                               previousPiece,
                                                                               currentPiece)
 
