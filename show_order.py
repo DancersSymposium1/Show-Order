@@ -1,8 +1,54 @@
-import random
-
 DANCER_FILE = 'S16 Assigned-Unassigned - Sheet1.csv'
 OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up S16 - Sheet1.csv'
 SHOW_ORDER_FILE = 'Show Order Format - S16.csv'
+
+class Show_Order(object):
+    
+    def __init__(self, ShowOrder, conflictMap):
+        self.ShowOrder = ShowOrder
+        self.conflictMap = conflictMap
+
+    def __repr__(self):
+        for act in self.ShowOrder:
+            print act
+            for dance in self.ShowOrder[act]:
+                print dance
+            print
+        return "ShowOrder & conflictMap wrapper class"
+
+    def check_order(self):
+        errors = False
+        print "ACT 1:"
+        for i in xrange(1, len(self.ShowOrder["ACT 1"])):
+            previousPiece, currentPiece = self.ShowOrder["ACT 1"][i - 1], self.ShowOrder["ACT 1"][i]
+            if previousPiece in self.conflictMap[currentPiece]:
+                errors = True
+                print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1,
+                                                                                      i,
+                                                                                      previousPiece,
+                                                                                      currentPiece)
+        print "\nACT 2:"
+        for i in xrange(1, len(self.ShowOrder["ACT 2"])):
+            previousPiece, currentPiece = self.ShowOrder["ACT 2"][i - 1], self.ShowOrder["ACT 2"][i]
+            if previousPiece in self.conflictMap[currentPiece]:
+                errors = True
+                print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(self.ShowOrder["ACT 1"]),
+                                                                                      i + len(self.ShowOrder["ACT 1"]),
+                                                                                      previousPiece,
+                                                                                      currentPiece)
+        return ~errors
+
+    def switch(self, dance1, dance2):
+        if dance1 in self.ShowOrder["ACT 1"]: dance1_i, act_i_d1 = self.ShowOrder["ACT 1"].index(dance1), "ACT 1"
+        elif dance1 in self.ShowOrder["ACT 2"]: dance1_i, act_i_d1 = self.ShowOrder["ACT 2"].index(dance1), "ACT 2"
+        else: print "%s is not in the ShowOrder\nCheck spelling" % dance1
+
+        if dance2 in self.ShowOrder["ACT 1"]: dance2_i, act_i_d2 = self.ShowOrder["ACT 1"].index(dance2), "ACT 1"
+        elif dance2 in self.ShowOrder["ACT 2"]: dance2_i, act_i_d2 = self.ShowOrder["ACT 2"].index(dance2), "ACT 2"
+        else: print "%s is not in the ShowOrder\nCheck spelling" % dance2
+
+        self.ShowOrder[act_i_d2][dance2_i], self.ShowOrder[act_i_d1][dance1_i] = self.ShowOrder[act_i_d1][dance1_i], self.ShowOrder[act_i_d2][dance2_i]
+        print "Switch between %s and %s complete!" % (dance1, dance2)
 
 def conflict(dancers1, dancers2):
     for dancer in dancers1:
@@ -68,30 +114,13 @@ def import_ShowOrder():
 
     return (ShowOrder, conflictMap)
 
-def check_order(ShowOrder, conflictMap):
-    errors = False
-    print "ACT 1:"
-    for i in xrange(1, len(ShowOrder["ACT 1"])):
-        previousPiece, currentPiece = ShowOrder["ACT 1"][i - 1], ShowOrder["ACT 1"][i]
-        if previousPiece in conflictMap[currentPiece]:
-            errors = True
-            print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1,
-                                                                                  i,
-                                                                                  previousPiece,
-                                                                                  currentPiece)
-    print "\nACT 2:"
-    for i in xrange(1, len(ShowOrder["ACT 2"])):
-        previousPiece, currentPiece = ShowOrder["ACT 2"][i - 1], ShowOrder["ACT 2"][i]
-        if previousPiece in conflictMap[currentPiece]:
-            errors = True
-            print "Conflict occured with #%d and #%d: %s and %s share dancers" % (i - 1 + len(ShowOrder["ACT 1"]),
-                                                                                  i + len(ShowOrder["ACT 1"]),
-                                                                                  previousPiece,
-                                                                                  currentPiece)
-    return errors
+def master_run():
+    (ShowOrder, conflictMap) = import_ShowOrder()
+    SO = Show_Order(ShowOrder, conflictMap)
 
-(ShowOrder, conflictMap) = import_ShowOrder()
-if (check_order(ShowOrder, conflictMap) == False): print "\nVerdict: This schedule works!"
-else: print "\nVerdict: Review previous errors"
+    if SO.check_order(): print "\nVerdict: This schedule works!"
+    else: print "\nVerdict: Review previous errors"
 
+    return SO
 
+master_run()
