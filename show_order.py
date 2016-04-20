@@ -184,6 +184,36 @@ def walk(SO):
         data.funCellWidth = points_to_pixels(maxFunCellWidth * font_size_fun * 1.5)
         data.funCellHeight = 4 * font_size_fun
 
+        data.corners_pp = []
+        for i in xrange(1, len(data.possible_pieces)):
+            cpp = (data.borderMargin, 
+                   data.borderMargin + ((2*i+1) * data.cellHeight_pp) / 2,
+                   data.borderMargin + data.cellWidth,
+                   data.borderMargin + ((2*i+3) * data.cellHeight_pp) / 2) #x0, y0, x1, y1
+            data.corners_pp.append(cpp)
+
+        data.corners_f1, data.corners_f2 = [], []
+        for i in xrange(1, len(SO.ShowOrder["ACT 1"])):
+            cf1 = (data.borderMargin + data.cellWidth + data.middleMargin, 
+                   data.borderMargin + i * data.cellHeight_final,
+                   data.borderMargin + 2 * data.cellWidth + data.middleMargin,
+                   data.borderMargin + (i+1) * data.cellHeight_final) #x0, y0, x1, y1
+            data.corners_f1.append(cf1)
+        for i in xrange(1, len(SO.ShowOrder["ACT 2"])):
+            cf2 = (data.borderMargin + 2 * data.cellWidth + data.middleMargin, 
+                   data.borderMargin + i * data.cellHeight_final,
+                   data.borderMargin + 3 * data.cellWidth + data.middleMargin,
+                   data.borderMargin + (i+1) * data.cellHeight_final) #x0, y0, x1, y1
+            data.corners_f2.append(cf2)
+
+        data.corners_function = []
+        for i in xrange(len(data.functionButtons)):
+            cf = (data.winWidth - data.borderMargin - data.funCellWidth, 
+                  data.winHeight - data.borderMargin - (len(data.functionButtons) - 1 - i) * data.funCellHeight,
+                  data.winWidth - data.borderMargin,
+                  data.winHeight - data.borderMargin - (len(data.functionButtons) - i) * data.funCellHeight) #x0, y0, x1, y1
+            data.corners_function.append(cf)
+
     def mousePressed(event):
         print (event.x, event.y)
                                 
@@ -230,7 +260,6 @@ def walk(SO):
                                data.borderMargin + 3 * data.cellWidth + data.middleMargin,
                                data.borderMargin + (i+1) * data.cellHeight_final) #x0, y0, x1, y1
             canvas.create_rectangle(corners_final_2)
-
 
         # bottom-right three buttons
         for i in xrange(len(data.functionButtons)):
