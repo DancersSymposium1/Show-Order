@@ -45,7 +45,7 @@ class Show_Order(object):
                                                                                       i + len(self.ShowOrder["ACT 1"]),
                                                                                       previousPiece,
                                                                                       currentPiece)
-        return ~errors
+        return (not errors)
 
     def switch(self, dance1, dance2):
         if dance1 in self.ShowOrder["ACT 1"]: dance1_i, act_i_d1 = self.ShowOrder["ACT 1"].index(dance1), "ACT 1"
