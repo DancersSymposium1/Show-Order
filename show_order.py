@@ -161,6 +161,9 @@ def walk(SO):
         possible_pieces.insert(0, "Possible Pieces")
         return possible_pieces
 
+    def inside_rect(x, y, corners):
+        return (corners[0] <= x) and (corners[1] <= y) and (x <= corners[2]) and (y <= corners[3])
+
     def init():
         data.possible_pieces = make_possible_pieces(SO)
         maxCellWidth = get_maxCellWidth(data.possible_pieces)
@@ -178,19 +181,25 @@ def walk(SO):
         data.winHeight = 2*data.borderMargin + max(total_cellHeight_pp, total_cellHeight_final)
 
         data.final_ShowOrder = []
-        data.functionButtons = ["RESET", "UNDO", ""]
+        data.functionButtons = ["RESET", "UNDO", "____"]
         maxFunCellWidth = get_maxCellWidth(data.functionButtons)
         font_size_fun = 12
         data.funCellWidth = points_to_pixels(maxFunCellWidth * font_size_fun * 1.5)
         data.funCellHeight = 4 * font_size_fun
 
-        data.corners_pp = []
+        data.corners_pp, data.corners_pp_corners = [], []
         for i in xrange(1, len(data.possible_pieces)):
             cpp = (data.borderMargin, 
                    data.borderMargin + ((2*i+1) * data.cellHeight_pp) / 2,
                    data.borderMargin + data.cellWidth,
                    data.borderMargin + ((2*i+3) * data.cellHeight_pp) / 2) #x0, y0, x1, y1
             data.corners_pp.append(cpp)
+        
+        # figure out the large dimensions of the possible pieces
+        data.corners_pp_corners = (data.borderMargin, 
+                                   data.borderMargin + (3 * data.cellHeight_pp) / 2,
+                                   data.borderMargin + data.cellWidth,
+                                   data.borderMargin + ((2 * len(data.possible_pieces) + 3) * data.cellHeight_pp) / 2)
 
         data.corners_f1, data.corners_f2 = [], []
         for i in xrange(1, len(SO.ShowOrder["ACT 1"])):
@@ -209,13 +218,24 @@ def walk(SO):
         data.corners_function = []
         for i in xrange(len(data.functionButtons)):
             cf = (data.winWidth - data.borderMargin - data.funCellWidth, 
-                  data.winHeight - data.borderMargin - (len(data.functionButtons) - 1 - i) * data.funCellHeight,
+                  data.winHeight - data.borderMargin - (len(data.functionButtons) - i) * data.funCellHeight,
                   data.winWidth - data.borderMargin,
-                  data.winHeight - data.borderMargin - (len(data.functionButtons) - i) * data.funCellHeight) #x0, y0, x1, y1
+                  data.winHeight - data.borderMargin - (len(data.functionButtons) - 1 - i) * data.funCellHeight) #x0, y0, x1, y1
             data.corners_function.append(cf)
 
-    def mousePressed(event):
-        print (event.x, event.y)
+    def mousePressed(event): #@TODO: Finish mousePressed and its helper functions
+        x, y = event.x, event.y
+        if inside_rect(x, y, data.corners_function[0]): # pushed reset button
+            reset()
+        elif inside_rect(x, y, data.corners_function[1]): # pushed undo button
+            undo()
+        elif inside_rect(x, y, data.corners_function[2]): # pushed ____ button
+            pass
+
+        elif inside_rect(x, y, data.corners_pp_corners):
+            for i in xrange(len(data.corners_pp)):
+                if inside_rect(event.x, event.y, data.corners_pp):
+                    select_pp(data.corners_pp(i))
                                 
     def timerFired(): pass
 
