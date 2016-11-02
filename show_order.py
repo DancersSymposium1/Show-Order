@@ -4,6 +4,9 @@ DANCER_FILE = 'S16 Assigned-Unassigned - Sheet1.csv'
 OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up S16 - Sheet1.csv'
 SHOW_ORDER_FILE = 'Show Order Format - S16.csv'
 
+DRINK_NAMES = ["Amy Lee", "Sarah Deluty", "Sabrina Liu", "Tusher Gabhane", "Lisa Natale"]
+DRINK_LIST = [] #editable
+
 def make_list(dic):
     s = []
     for act in dic:
@@ -36,6 +39,10 @@ class Show_Order(object):
                                                                                       i,
                                                                                       previousPiece,
                                                                                       currentPiece)
+                for drink_val in DRINK_LIST:
+                    if (previousPiece == drink_val[0]) and (currentPiece == drink_val[1]):
+                        print "Take a shot! (Thanks %s)" % drink_val[2]
+
         print "\nACT 2:"
         for i in xrange(1, len(self.ShowOrder["ACT 2"])):
             previousPiece, currentPiece = self.ShowOrder["ACT 2"][i - 1], self.ShowOrder["ACT 2"][i]
@@ -45,6 +52,10 @@ class Show_Order(object):
                                                                                       i + len(self.ShowOrder["ACT 1"]),
                                                                                       previousPiece,
                                                                                       currentPiece)
+                for drink_val in DRINK_LIST:
+                    if (previousPiece == drink_val[0]) and (currentPiece == drink_val[1]):
+                        print "Take a shot! (Thanks %s)" % drink_val[2]
+
         return (not errors)
 
     def switch(self, dance1, dance2):
@@ -66,6 +77,17 @@ class Show_Order(object):
                 if piece_i not in self.conflictMap[piece]:
                     result.append(piece_i)
         return result
+
+    def help(self):
+        print "List of functions:"
+        print "\tSO.ShowOrder\t\t\t- dictionary of the show order, organized by Act Number"
+        print "\t\t\t\t\t  which stores a list of the pieces in order"
+        print "\tSO.conflictMap\t\t\t- dictionary of the conflict map, organized by Act Number"
+        print "\t\t\t\t\t  which stores a list of each piece that conflicts with the"
+        print "\t\t\t\t\t  corresponding piece in ShowOrder"
+        print "\tSO.check_order()\t\t- checks the order of the given ShowOrder"
+        print "\tSO.switch(dance1, dance2)\t- switches 'dance1' with 'dance2' in ShowOrder"
+        print "\tSO.no_conflict(self, piece)\t- returns a list of all the pieces that do not conflict with 'piece'"
 
 def conflict(dancers1, dancers2):
     for dancer in dancers1:
@@ -109,6 +131,7 @@ def import_ShowOrder():
         conflictMap[piece1] = []
         for piece2 in Pieces:
             if (piece1 != piece2) and (conflict(Pieces[piece1], Pieces[piece2])):
+                drink_list_create(Pieces, piece1, piece2)
                 conflictMap[piece1].append(piece2)
 
     ShowOrder = {}
@@ -136,9 +159,14 @@ def master_run():
     SO = Show_Order(ShowOrder, conflictMap)
 
     if SO.check_order(): print "\nVerdict: This schedule works!"
-    else: print "\nVerdict: Review previous errors"
-
+    else: print "\nVerdict: Review previous errors (call 'SO.help() for details')"
     return SO
+
+def drink_list_create(Pieces, piece1, piece2):
+    for drink_dancer in DRINK_NAMES:
+        if (drink_dancer in Pieces[piece1]):
+            if (drink_dancer in Pieces[piece2]): 
+                DRINK_LIST.append([piece1, piece2, drink_dancer])
 
 def walk(SO):
 
@@ -328,4 +356,4 @@ def walk(SO):
     root.mainloop() # blocks until window is closed
     print("Walk done.")
 
-master_run()
+SO = master_run()
