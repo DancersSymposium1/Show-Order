@@ -76,7 +76,7 @@ class Show_Order(object):
             for piece_i in self.ShowOrder[act]:
                 if piece_i not in self.conflictMap[piece]:
                     result.append(piece_i)
-        return result
+        for freePiece in sorted(result): print freePiece
 
     def help(self):
         print "List of functions:"
