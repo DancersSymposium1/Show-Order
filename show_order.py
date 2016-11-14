@@ -4,7 +4,7 @@ DANCER_FILE = 'F16 Assigned-Unassigned - Sheet1.csv'
 OUTSIDE_ORGS_FILE = '[DS] Outside Orgs Sign-Up F16 - Sheet1.csv'
 SHOW_ORDER_FILE = 'Show Order Format - F16.csv'
 
-DRINK_NAMES = ["Amy Lee", "Sarah Deluty", "Sabrina Liu", "Tusher Gabhane", "Lisa Natale"]
+DRINK_NAMES = ["Amy Lee", "Sarah Deluty", "Sabrina Liu", "Tushar Gabhane", "Lisa Natale"]
 DRINK_LIST = [] #editable
 
 def make_list(dic):
