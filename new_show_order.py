@@ -8,9 +8,9 @@ import codecs
 import string
 from collections import defaultdict
 
-DANCER_FILE = 'S20 Assigned-Unassigned - Sheet1.csv'
-OUTSIDE_ORGS_FILE = 'Outside Orgs Sign-Up S20 - Sheet1.csv'
-SHOW_ORDER_FILE = 'Show Order Format - S20.csv'
+DANCER_FILE = 'S23 Assigned-Unassigned.csv'
+OUTSIDE_ORGS_FILE = 'Outside Orgs S23.csv'
+SHOW_ORDER_FILE = 'Show Order Format - S23.csv'
 
 # util function for printing lists (useful for debugging)
 def print_list(list):
@@ -75,7 +75,7 @@ class PrepareShow():
             if len(row[0])==0 and len(row[1])==0:
                 # end of the last piece
                 self.Pieces[p] = dancers
-                p = ""
+                p = "" 
                 has_piece = False
                 has_dancers = False
                 continue
@@ -105,9 +105,9 @@ class PrepareShow():
         reader = csv.reader(f)
         dancers = []
         for row in reader:
-            p = row[1].lower()
-            string = str(row[0].lower()).strip(' "')
-            dancers = string.split(', ')
+            # This is kinda a hotfix for formatting breaking - Christoph
+            p = row[-1].lower().strip(' "')
+            dancers = [d.lower().strip(' "') for d in row[:-1]]
             self.Pieces[p] = dancers
             for dancer in dancers:
                 self.Dancers[dancer].append(p)
@@ -267,6 +267,36 @@ class PrepareShow():
                     print_list(conflicts)
         return act_safe
 
+    # identify_quickchanges_act: a class function to parse completed act for quickchanges
+    # INPUT: a list of the pieces in that act, in order (string list)
+    # OUTPUT: none. Prints all quickchanges if any
+    def identify_quickchanges_act(self, act):
+        act_safe = True
+        for index in range(len(act)-2):
+            current_piece = act[index]
+            nn_piece = act[index+2]
+            if len(nn_piece)>0:
+                current_list = self.Pieces[current_piece]
+                nn_list = self.Pieces[nn_piece]
+                # IMPORTANT: comment out this entire if statement if you want to allow senior solos as quick changes
+                conflicts = check_dancers(current_list, nn_list)
+                if len(conflicts) is not 0:
+                    print("Quick Change between '" + current_piece + "' and '" + nn_piece + "' for these dancers:")
+                    print_list(conflicts)
+        return act_safe
+    
+    # identify_quickchanges: a class function to identify any quick changes in finished show order 
+    # INPUT: none
+    # OUTPUT: none. Prints all quickchanges if any
+    def identify_quickchanges(self):
+        act1 = self.Order["ACT I"]
+        act2 = self.Order["ACT II"]
+        print("ACT I:")
+        self.identify_quickchanges_act(act1)
+        print("ACT II:")
+        self.identify_quickchanges_act(act2)
+        print("\n\n")
+
     # check_show: a class function to check the entire show order 
     # INPUT: none
     # OUTPUT: a boolean for whether or not that show order contains conflicts
@@ -292,12 +322,13 @@ class PrepareShow():
 def master_run():
     Show = PrepareShow()
     Show.check_show()
-    Show.list_conflicts('mohamed & emily', 'rachel & heeyun')
-    Show.list_good_pieces('rachel & heeyun')
-    Show.list_bad_pieces('abby & tejas')
-    Show.list_dancer_pieces('christina di')
-    Show.most_conflicting()
-    Show.list_at_least(3)
-    Show.dancer_most_pieces()
+    # Show.list_conflicts('mohamed & emily', 'rachel & heeyun')
+    # Show.list_good_pieces('rachel & heeyun')
+    # Show.list_bad_pieces('abby & tejas')
+    # Show.identify_quickchanges()
+    # Show.list_dancer_pieces('')
+    # Show.most_conflicting()
+    # Show.list_at_least(2)
+    # Show.dancer_most_pieces()
 
 master_run()
