@@ -4,16 +4,22 @@ import codecs
 from collections import defaultdict
 import copy
 
+
+# UPDATE VARIABLES HERE
+
 DANCER_FILE = "new_s25_rosters.csv"
 SHOW_ORDER_FILE = "tmp.csv"
-SHOW_LENGTH = 40
+SHOW_LENGTH = 40 # Includes DS pieces, Partner Org pieces, and Senior Solos
 
+# manually format all show pieces according to consistent shorthand
 ALL_PIECES = random.sample(["soulstylz","en pointe","abhinaya","valia","juli","suzy","fsa","arcc","vera","tyler & kina",
                             "jianing & lydia","tricking seniors","kpdc","alex & alisa","alex senior solo","camille","paige","jiya","jillian",
                             "lydia senior solo","street seniors","infra","caroline","karina","helen","valia senior solo","tricking","stanley","infra seniors",
                             "helix seniors","sydney","sonya","nina senior solo","kina senior solo","lily senior solo","tiffany","helix","nina & lily",
                             "eleanor senior solo","alex"],SHOW_LENGTH)
 
+# list of all pieces you want to be in a fixed position in the show order
+# for example, soul is always the opener of the show
 FIXED_ACT1 = ["soulstylz","valia","abhinaya","kpdc","caroline",
               "lily senior solo","stanley","jillian","valia senior solo","camille",
               "","nina senior solo","sydney","infra seniors","alex & alisa",
@@ -22,6 +28,8 @@ FIXED_ACT2 = ["tyler & kina","","","","",
               "","","","","",
               "","","","","",
               "","","helix","eleanor senior solo","alex"]
+
+# END VARIABLE EDITING
 
 def write_file(act1,act2):
     with open(SHOW_ORDER_FILE ,"rw") as f:
@@ -68,10 +76,13 @@ class PrepareShow():
     #       check_show(self): line 271
     def __init__(self):
         self.known_bad = set()
+
+        # known_bad speeds up runtime by immediately throwing out proposed orders in which two pieces are next to each other. This can be used to account for known conflicts but also vibe whiplash we don't want to see on stage.
         self.known_bad.add(("soulstylz","jillian"))
         self.known_bad.add(("soulstylz","alex & alisa"))
         self.known_bad.add(("soulstylz","karina"))
         self.known_bad.add(("alex","suzy"))
+        # For example, we knew we didn't want a senior solo second in the show, but we also knew soul would be first in the show. We hardcoded this below
         self.known_bad.add(("soulstylz","kina senior solo"))
         self.known_bad.add(("soulstylz","valia senior solo"))
         self.known_bad.add(("soulstylz","alex senior solo"))
@@ -356,29 +367,17 @@ class PrepareShow():
 
 def generate_orders(used, order, fixed):
     iterations = 0
-    # tried = [order]
     Show = PrepareShow()
     Show.update_order(order)
-    # MAX_ITER = 5000000
     no_conflicts = False
-    quick_thresh = 2
+
+    quick_thresh = 2 # maximum number of quick changes we'll allow in the whole show (want to minimize, but sometimes at least 1 is inevitable)
     quick_changes = Show.identify_quickchanges()
     while (no_conflicts==False or quick_changes > quick_thresh):
-    # (iterations < MAX_ITER):
 
-        # if(iterations==(MAX_ITER)//16):
-        #     print("1/16 completed")
-        # if(iterations==(MAX_ITER)//8):
-        #     print("0.125 completed")
-        # if(iterations==(MAX_ITER)//4):
-        #     print("0.25 completed")
-        # if(iterations==(MAX_ITER)//2):
-        #     print("0.5 completed")
-        # if(iterations==3*(MAX_ITER)//4):
-        #     print("0.75 completed")
         all_pieces = list(Show.Pieces.keys())
         remaining = random.sample(subtract_lists(all_pieces,used),len(all_pieces)-len(used))
-        for piece in range(40):
+        for piece in range(SHOW_LENGTH):
             if order[piece] not in fixed:
                 order[piece] = remaining[0]
                 remaining = remaining[1:]
@@ -390,7 +389,7 @@ def generate_orders(used, order, fixed):
                 print(Show.Order)
                 with open("tmp.csv","w") as f:
                     f.writelines(f"Act 1, Act 2\n")
-                    for i in range(20):
+                    for i in range(SHOW_LENGTH//2):
                         p1 = Show.Order["ACT I"][i]
                         p2 = Show.Order["ACT II"][i]
                         f.write(f"{p1},{p2}\n")
@@ -424,7 +423,7 @@ def main():
 
     initial_seed = copy.deepcopy(fixed)
 
-    for i in range(40):
+    for i in range(SHOW_LENGTH):
         if initial_seed[i]=="":
             initial_seed[i] = pieces[0]
             pieces = pieces[1:]
