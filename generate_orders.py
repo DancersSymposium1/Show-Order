@@ -1,15 +1,33 @@
-# WHOLE NEW SHOW ORDER ATTEMPT 3.0
-# Author: Amy Zhang
-# Date: January 10, 2019
-# Last Updated: January 29, 2020
+import random
 import csv 
-import sys
 import codecs
-import string
 from collections import defaultdict
+import copy
 
-DANCER_FILE = 's25_rosters.csv'
-SHOW_ORDER_FILE = 'proposed_order.csv'
+DANCER_FILE = "new_s25_rosters.csv"
+SHOW_ORDER_FILE = "tmp.csv"
+SHOW_LENGTH = 40
+
+ALL_PIECES = random.sample(["soulstylz","en pointe","abhinaya","valia","juli","suzy","fsa","arcc","vera","tyler & kina",
+                            "jianing & lydia","tricking seniors","kpdc","alex & alisa","alex senior solo","camille","paige","jiya","jillian",
+                            "lydia senior solo","street seniors","infra","caroline","karina","helen","valia senior solo","tricking","stanley","infra seniors",
+                            "helix seniors","sydney","sonya","nina senior solo","kina senior solo","lily senior solo","tiffany","helix","nina & lily",
+                            "eleanor senior solo","alex"],SHOW_LENGTH)
+
+FIXED_ACT1 = ["soulstylz","valia","abhinaya","kpdc","caroline",
+              "lily senior solo","stanley","jillian","valia senior solo","camille",
+              "","nina senior solo","sydney","infra seniors","alex & alisa",
+              "kina senior solo","karina","tiffany","juli","nina & lily"]
+FIXED_ACT2 = ["tyler & kina","","","","",
+              "","","","","",
+              "","","","","",
+              "","","helix","eleanor senior solo","alex"]
+
+def write_file(act1,act2):
+    with open(SHOW_ORDER_FILE ,"rw") as f:
+        f.write("Act 1, Act 2\n")
+        for p1,p2 in act1,act2:
+            f.write(f"{p1},{p2}\n",p1,p2)
 
 # util function for printing lists (useful for debugging)
 def print_list(list):
@@ -26,12 +44,8 @@ def print_dic(dic):
 
 # util function to find dancers that overlap between two lists
 def check_dancers(list1, list2):
-    conflicts = []
-    for dancer in list1:
-        if dancer in list2:
-            conflicts.append(dancer)
-            # print(conflicts)
-    return conflicts
+    conflicts = list1 & list2
+    return list(conflicts)
 
 class PrepareShow():
     # Class to hold all of the information about dancers, pieces, and show order
@@ -53,14 +67,32 @@ class PrepareShow():
     #       check_act(self, act): line 247
     #       check_show(self): line 271
     def __init__(self):
-        # helper function for creating a dictionary of DS piece people using the DANCER_FILE
-        # self._import_assigned()
-        # helper function for creating a dictionary of outside org people using OUTSIDE_ORGS_FILE
+        self.known_bad = set()
+        self.known_bad.add(("soulstylz","jillian"))
+        self.known_bad.add(("soulstylz","alex & alisa"))
+        self.known_bad.add(("soulstylz","karina"))
+        self.known_bad.add(("alex","suzy"))
+        self.known_bad.add(("soulstylz","kina senior solo"))
+        self.known_bad.add(("soulstylz","valia senior solo"))
+        self.known_bad.add(("soulstylz","alex senior solo"))
+        self.known_bad.add(("soulstylz","tricking seniors"))
+        self.known_bad.add(("soulstylz","helix seniors"))
+        self.known_bad.add(("soulstylz","nina senior solo"))
+        self.known_bad.add(("soulstylz","eleanor senior solo"))
+        self.known_bad.add(("soulstylz","street seniors"))
+        self.known_bad.add(("soulstylz","infra seniors"))
+        self.known_bad.add(("soulstylz","lydia senior solo"))
+        self.known_bad.add(("soulstylz","lily senior solo"))
+
         self._import_dancers()
-        # user function for creating a dictionary of show order using SHOW_ORDER_FILE
-        self._import_order()
         if '' in self.Pieces:
-            del self.Pieces['']    
+            del self.Pieces['']     
+
+    def update_order(self,order):
+        self.Order = {"ACT I": order[:20], "ACT II": order[20:]}
+
+    def quick_check(self, curr_piece, next_piece):
+        return (curr_piece,next_piece) in self.known_bad
 
     def _import_assigned(self):
         self.Pieces = defaultdict(lambda: [])
@@ -112,7 +144,7 @@ class PrepareShow():
             # This is kinda a hotfix for formatting breaking - Christoph
             p = row[-1].lower().strip(' "')
             dancers = [d.lower().strip(' "') for d in row[:-1]]
-            self.Pieces[p] = dancers
+            self.Pieces[p] = set(dancers)
             for dancer in dancers:
                 self.Dancers[dancer].append(p)
         # for dancer in self.Dancers:
@@ -132,9 +164,6 @@ class PrepareShow():
                 first = False
         self.Order = {"ACT I": act1, "ACT II": act2}
 
-    # list_dancer_pieces: a class function to list the number of pieces a dancer is in
-    # INPUT: a dancer (string)
-    # OUTPUT: a list of pieces the dancer is in (string list)
     def list_dancer_pieces(self, dancer):
         dancer = dancer.lower()
         pieces = self.Dancers[dancer]
@@ -231,115 +260,176 @@ class PrepareShow():
         print("There are " + str(len(dlist)) + " such dancers.")
         return dlist
 
-    # dancer_most_pieces: a class function to list the dancer(s) in the most pieces
-    # INPUT: none
-    # OUTPUT: a list of dancers that are in the most pieces (string list)
     def dancer_most_pieces(self):
-        dlist = []
-        max_pieces = 0
-        for item in self.Dancers.keys():
-            pieces = len(self.Dancers[item.lower()])
-            if pieces > max_pieces:
-                dlist = []
-                dlist.append(item)
-                max_pieces = pieces
-            elif pieces == max_pieces:
-                dlist.append(item)
-        print("The dancers with the most pieces have " + str(max_pieces) + " other pieces. Here are the dancers with this number of pieces: ")
-        print_list(dlist)
-        return dlist
+            dlist = []
+            max_pieces = 0
+            for item in self.Dancers.keys():
+                pieces = len(self.Dancers[item.lower()])
+                if pieces > max_pieces:
+                    dlist = []
+                    dlist.append(item)
+                    max_pieces = pieces
+                elif pieces == max_pieces:
+                    dlist.append(item)
+            print("The dancers with the most pieces have " + str(max_pieces) + " other pieces. Here are the dancers with this number of pieces: ")
+            print_list(dlist)
+            return dlist
+    
 
-    # check_act: a class function to check the show order for an act
-    # INPUT: a list of the pieces in that act, in order (string list)
-    # OUTPUT: a boolean for whether or not that act contains conflicts
-    def check_act(self, act):
+    def check_act(self,act):
         act_safe = True
         for index in range(len(act)-1):
             current_piece = act[index]
             next_piece = act[index+1]
+            
+            if self.quick_check(current_piece,next_piece):
+                return False
+
+
             if len(self.Pieces[next_piece])>0:
                 current_list = self.Pieces[current_piece]
                 next_list = self.Pieces[next_piece]
 
                 # IMPORTANT: comment out this entire if statement if you want to allow senior solos as quick changes
-                # if "senior solo" in next_piece and (index<len(act)-2):
-                #     next_next_piece = act[index+2]
-                #     next_next_list = self.Pieces[next_next_piece]
-                #     next_list = next_next_list+next_list
-                #     next_piece = next_piece + "' and '" + next_next_piece
+                if "senior solo" in next_piece and (index<len(act)-2):
+                    next_next_piece = act[index+2]
+                    next_next_list = self.Pieces[next_next_piece]
+                    next_list = next_next_list|next_list
+                    next_piece = next_piece + "' and '" + next_next_piece
                 conflicts = check_dancers(current_list, next_list)
                 if len(conflicts) != 0:
                     act_safe = False
-                    print("CONFLICT: There are conflicting dancers between '" + current_piece + "' and '" + next_piece + "'. Here are the conflicts:")
-                    print_list(conflicts)
+                    self.known_bad.add((current_piece,next_piece))
+                    return False
+                    # print("CONFLICT: There are conflicting dancers between '" + current_piece + "' and '" + next_piece + "'. Here are the conflicts:")
+                    # print_list(conflicts)
             else:
                 print(f'piece {next_piece} has no dancers listed')
         return act_safe
 
-    # identify_quickchanges_act: a class function to parse completed act for quickchanges
-    # INPUT: a list of the pieces in that act, in order (string list)
-    # OUTPUT: none. Prints all quickchanges if any
-    def identify_quickchanges_act(self, act):
-        act_safe = True
+    def identify_quickchanges_act(self,act):
+        num_quickchanges = 0
         for index in range(len(act)-2):
             current_piece = act[index]
             nn_piece = act[index+2]
             if len(nn_piece)>0:
                 current_list = self.Pieces[current_piece]
                 nn_list = self.Pieces[nn_piece]
-                # IMPORTANT: comment out this entire if statement if you want to allow senior solos as quick changes
                 conflicts = check_dancers(current_list, nn_list)
                 if len(conflicts) != 0:
-                    print("Quick Change between '" + current_piece + "' and '" + nn_piece + "' for these dancers:")
-                    print_list(conflicts)
-        return act_safe
+                    num_quickchanges+=len(conflicts)
+                    # res_string = f"Quick Change between '{current_piece}' and '{nn_piece}' for these dancers:\n"
+                    # res_conflicts = conflicts
+        return num_quickchanges
     
-    # identify_quickchanges: a class function to identify any quick changes in finished show order 
-    # INPUT: none
-    # OUTPUT: none. Prints all quickchanges if any
+
     def identify_quickchanges(self):
         act1 = self.Order["ACT I"]
         act2 = self.Order["ACT II"]
-        print("ACT I:")
-        self.identify_quickchanges_act(act1)
-        print("ACT II:")
-        self.identify_quickchanges_act(act2)
-        print("\n\n")
+        # print("ACT I:")
+        qc_act1 = self.identify_quickchanges_act(act1)
+        # print("ACT II:")
+        qc_act2 = self.identify_quickchanges_act(act2)
+        # print("\n\n")
+        return qc_act1 + qc_act2
 
-    # check_show: a class function to check the entire show order 
-    # INPUT: none
-    # OUTPUT: a boolean for whether or not that show order contains conflicts
     def check_show(self):
         act1 = self.Order["ACT I"]
         act2 = self.Order["ACT II"]
+        # print("ACT 1: ",act1)
         act1_safe = self.check_act(act1)
         # act1_safe = True
         act2_safe = self.check_act(act2)
-        print("SUMMARY:")
-        if act1_safe:
-            print("ACT I has no conflicts")
-        else:
-            print("ACT I has conflicts")
-        if act2_safe:
-            print("ACT II has no conflicts")
-        else:
-            print("ACT II has conflicts")
+        # print("SUMMARY:")
+        # if act1_safe:
+        #     print("ACT I has no conflicts")
+        # else:
+        #     print("ACT I has conflicts")
+        # if act2_safe:
+        #     print("ACT II has no conflicts")
+        # else:
+        #     print("ACT II has conflicts")
         if act1_safe and act2_safe:
             print("GOOD SHOW ORDER!")
-        print("\n\n")
+            return True
+        else: return False
 
-# your main function that you use to run the whole program
-def master_run():
+def generate_orders(used, order, fixed):
+    iterations = 0
+    # tried = [order]
     Show = PrepareShow()
-    Show.check_show()
-    # Show.list_conflicts('Infra','Nina F & Amelia')
+    Show.update_order(order)
+    # MAX_ITER = 5000000
+    no_conflicts = False
+    quick_thresh = 2
+    quick_changes = Show.identify_quickchanges()
+    while (no_conflicts==False or quick_changes > quick_thresh):
+    # (iterations < MAX_ITER):
 
-    # Show.list_good_pieces('rachel & heeyun')
-    # Show.list_bad_pieces('abby & tejas')
-    Show.identify_quickchanges()
-    # Show.list_dancer_pieces('Sophia Holland')
-    # Show.most_conflicting()
-    # Show.list_at_least(2)
-    # Show.dancer_most_pieces()
+        # if(iterations==(MAX_ITER)//16):
+        #     print("1/16 completed")
+        # if(iterations==(MAX_ITER)//8):
+        #     print("0.125 completed")
+        # if(iterations==(MAX_ITER)//4):
+        #     print("0.25 completed")
+        # if(iterations==(MAX_ITER)//2):
+        #     print("0.5 completed")
+        # if(iterations==3*(MAX_ITER)//4):
+        #     print("0.75 completed")
+        all_pieces = list(Show.Pieces.keys())
+        remaining = random.sample(subtract_lists(all_pieces,used),len(all_pieces)-len(used))
+        for piece in range(40):
+            if order[piece] not in fixed:
+                order[piece] = remaining[0]
+                remaining = remaining[1:]
 
-master_run()
+        Show.update_order(order)
+        if(Show.check_show()==True):
+            quick_changes = Show.identify_quickchanges()
+            if(quick_changes <= quick_thresh):
+                print(Show.Order)
+                with open("tmp.csv","w") as f:
+                    f.writelines(f"Act 1, Act 2\n")
+                    for i in range(20):
+                        p1 = Show.Order["ACT I"][i]
+                        p2 = Show.Order["ACT II"][i]
+                        f.write(f"{p1},{p2}\n")
+                print("number of quick changes is: ",quick_changes)
+
+                print(iterations)
+                return "GOOD"
+        iterations+=1
+    return "NOT POSSIBLE"
+
+def subtract_lists(l1, l2):
+    result = []
+    for i in range(len(l1)):
+        if l1[i] not in l2:
+            result.append(l1[i])
+    return result
+
+    
+def main():
+    used = []
+
+    for fa1 in FIXED_ACT1:
+        if fa1 != "":
+            used.append(fa1)
+    for fa2 in FIXED_ACT2:
+        if fa2 != "":
+            used.append(fa2)
+
+    pieces = random.sample(subtract_lists(ALL_PIECES,used),len(ALL_PIECES)-len(used))
+    fixed = FIXED_ACT1+FIXED_ACT2
+
+    initial_seed = copy.deepcopy(fixed)
+
+    for i in range(40):
+        if initial_seed[i]=="":
+            initial_seed[i] = pieces[0]
+            pieces = pieces[1:]
+
+    # print(initial_seed)
+    print(generate_orders(used,initial_seed,fixed))
+
+main()

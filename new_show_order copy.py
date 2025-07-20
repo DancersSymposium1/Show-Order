@@ -1,15 +1,22 @@
-# WHOLE NEW SHOW ORDER ATTEMPT 3.0
-# Author: Amy Zhang
-# Date: January 10, 2019
-# Last Updated: January 29, 2020
+# SHOW ORDER 3.5
+# Author: Sophia Holland
+# Date: November 2024
+# Last Updated: November 2024
 import csv 
-import sys
 import codecs
-import string
 from collections import defaultdict
+import random
 
-DANCER_FILE = 's25_rosters.csv'
-SHOW_ORDER_FILE = 'proposed_order.csv'
+DANCER_FILE = 'new_s25_rosters.csv'
+SHOW_ORDER_FILE = 'tmp.csv'
+
+SHOW_LENGTH = 30
+
+ALL_PIECES = random.sample(["soulstylz","en pointe","abhinaya","valia","juli","suzy","fsa","arcc","vera","tyler & kina",
+                            "jianing & lydia","tricking seniors","kpdc","alex & alisa","alex senior solo","camille","paige","jiya","jillian",
+                            "lydia senior solo","street seniors","infra","caroline","karina","helen","valia senior solo","tricking","stanley","infra seniors",
+                            "helix seniors","sydney","sonya","nina senior solo","kina senior solo","lily senior solo","tiffany","helix","nina & lily",
+                            "eleanor senior solo","alex"],SHOW_LENGTH)
 
 # util function for printing lists (useful for debugging)
 def print_list(list):
@@ -53,14 +60,12 @@ class PrepareShow():
     #       check_act(self, act): line 247
     #       check_show(self): line 271
     def __init__(self):
-        # helper function for creating a dictionary of DS piece people using the DANCER_FILE
-        # self._import_assigned()
-        # helper function for creating a dictionary of outside org people using OUTSIDE_ORGS_FILE
+        # helper function for creating a dictionary of dancers using DANCER_FILE
         self._import_dancers()
         # user function for creating a dictionary of show order using SHOW_ORDER_FILE
         self._import_order()
         if '' in self.Pieces:
-            del self.Pieces['']    
+            del self.Pieces['']     
 
     def _import_assigned(self):
         self.Pieces = defaultdict(lambda: [])
@@ -131,6 +136,81 @@ class PrepareShow():
             else:
                 first = False
         self.Order = {"ACT I": act1, "ACT II": act2}
+
+    
+    # def get_overlaps(self):
+    #     with open("tmp.csv","w") as f:
+    #         for i in range(40):
+    #             for j in range(i,40):
+    #                 if i!=j:
+    #                     roster1 = set(self.Pieces[ALL_PIECES[i]])
+    #                     roster2 = set(self.Pieces[ALL_PIECES[j]])
+    #                     f.write(f"{ALL_PIECES[i]},{ALL_PIECES[j]}: {len(roster1 & roster2)} overlaps: {roster1&roster2}\n")
+
+
+    # def generate_order(self):
+    #     all_pieces = list(self.Pieces.keys())
+    #     random.shuffle(all_pieces)
+    #     print("all pieces: ",all_pieces)
+
+    #     act1, act2 = [], []
+    #     used_pieces = set()
+        
+    #     for piece in all_pieces:
+    #         if piece in used_pieces:
+    #             continue
+    #         if not act1 or not self._find_bad_pieces(act1[-1]):
+    #             act1.append(piece)
+    #         elif not act2 or not self._find_bad_pieces(act2[-1]):
+    #             act2.append(piece)
+    #         used_pieces.add(piece)
+
+    #     self.Order = {"ACT I": act1, "ACT II": act2}
+    #     print("Proposed order: ",self.Order)
+
+
+    # def generate_order(self, fixed_pieces=None):
+    #     """
+    #     Generates a randomized show order while respecting fixed positions.
+        
+    #     :param fixed_pieces: Dict mapping pieces to (act, position) e.g. {"finale": ("ACT II", -1)}
+    #     """
+    #     all_pieces = list(self.Pieces.keys())
+    #     random.shuffle(all_pieces)
+
+    #     # Initialize acts with fixed piece slots
+    #     act1 = [None] * (len(all_pieces)//2+(len(all_pieces)%2))
+    #     act2 = [None] * (len(all_pieces)//2)
+
+    #     used_pieces = set()
+
+    #     # Place fixed pieces
+    #     if fixed_pieces:
+    #         for piece, (act, pos) in fixed_pieces.items():
+    #             # if piece in self.Pieces:
+    #             if act == "ACT I":
+    #                 act1[pos] = piece
+    #                 print("ACT ! SPECIAL : ",act1, pos)
+    #             elif act == "ACT II":
+    #                 act2[pos] = piece
+    #             used_pieces.add(piece)
+    #     # print("act 1: ",act1)
+
+    #     # Fill remaining slots, ensuring no conflicts
+    #     def assign_pieces(act_list):
+    #         for i in range(len(act_list)):
+    #             if act_list[i] is None:  # Fill only empty slots
+    #                 for piece in all_pieces:
+    #                     if piece not in used_pieces:
+    #                             act_list[i] = piece
+    #                             used_pieces.add(piece)
+    #                             break
+
+    #     assign_pieces(act1)
+    #     assign_pieces(act2)
+
+    #     # Remove None values (in case of empty slots)
+    #     self.Order = {"ACT I": [p for p in act1 if p], "ACT II": [p for p in act2 if p]}
 
     # list_dancer_pieces: a class function to list the number of pieces a dancer is in
     # INPUT: a dancer (string)
@@ -262,11 +342,11 @@ class PrepareShow():
                 next_list = self.Pieces[next_piece]
 
                 # IMPORTANT: comment out this entire if statement if you want to allow senior solos as quick changes
-                # if "senior solo" in next_piece and (index<len(act)-2):
-                #     next_next_piece = act[index+2]
-                #     next_next_list = self.Pieces[next_next_piece]
-                #     next_list = next_next_list+next_list
-                #     next_piece = next_piece + "' and '" + next_next_piece
+                if "senior solo" in next_piece and (index<len(act)-2):
+                    next_next_piece = act[index+2]
+                    next_next_list = self.Pieces[next_next_piece]
+                    next_list = next_next_list+next_list
+                    next_piece = next_piece + "' and '" + next_next_piece
                 conflicts = check_dancers(current_list, next_list)
                 if len(conflicts) != 0:
                     act_safe = False
@@ -326,20 +406,17 @@ class PrepareShow():
             print("ACT II has conflicts")
         if act1_safe and act2_safe:
             print("GOOD SHOW ORDER!")
+            return True
+        else: return False
         print("\n\n")
 
 # your main function that you use to run the whole program
 def master_run():
     Show = PrepareShow()
+    # Show.get_overlaps()
     Show.check_show()
-    # Show.list_conflicts('Infra','Nina F & Amelia')
-
-    # Show.list_good_pieces('rachel & heeyun')
-    # Show.list_bad_pieces('abby & tejas')
     Show.identify_quickchanges()
-    # Show.list_dancer_pieces('Sophia Holland')
-    # Show.most_conflicting()
-    # Show.list_at_least(2)
-    # Show.dancer_most_pieces()
+    print("Order: ",Show.Order)
+
 
 master_run()
